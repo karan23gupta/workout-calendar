@@ -1,0 +1,47 @@
+.streak-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.streak-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.streak-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.streak-value {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  margin: 8px 0;
+}
+
+.streak-unit {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .streak-display {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .streak-value {
+    font-size: 2.5rem;
+  }
+}
+
