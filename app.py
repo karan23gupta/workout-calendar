@@ -32,7 +32,7 @@ import database
 # Create all tables (only creates if they don't exist, doesn't alter existing tables)
 # For production, run migrations separately
 try:
-    models.Base.metadata.create_all(bind=database.engine)
+models.Base.metadata.create_all(bind=database.engine)
 except Exception as e:
     print(f"Warning: Could not create tables: {e}")
     print("If tables already exist, this is normal. Run migrate_db.py to update schema.")
@@ -281,11 +281,23 @@ def validate_image_date(image_path: str, expected_date: date) -> tuple[bool, str
     ]
     
     try:
+        print(f"[IMAGE_VALIDATION] Starting validation for: {image_path}")
+        print(f"[IMAGE_VALIDATION] Expected date: {expected_date}")
+        
         img = Image.open(image_path)
+        print(f"[IMAGE_VALIDATION] Image opened successfully. Format: {img.format}, Size: {img.size}")
+        
         exif_data = img.getexif()
+        print(f"[IMAGE_VALIDATION] EXIF data type: {type(exif_data)}, Is None: {exif_data is None}")
         
         if exif_data is None:
+            print("[IMAGE_VALIDATION] ERROR: No EXIF data found in image")
             return False, "📸 Hmm, this photo doesn't have date info! Make sure you're taking a fresh photo with your camera (not a screenshot)."
+        
+        # Log all available EXIF tags
+        print(f"[IMAGE_VALIDATION] EXIF data has {len(exif_data)} tags")
+        if len(exif_data) > 0:
+            print(f"[IMAGE_VALIDATION] Available EXIF tag IDs: {list(exif_data.keys())[:10]}...")  # Show first 10
         
         # EXIF tag IDs: 306 = DateTime, 36867 = DateTimeOriginal
         date_time = None
@@ -294,28 +306,52 @@ def validate_image_date(image_path: str, expected_date: date) -> tuple[bool, str
         # Try to get DateTimeOriginal (tag 36867) first, then DateTime (tag 306)
         if 36867 in exif_data:
             date_time_original = exif_data[36867]
+            print(f"[IMAGE_VALIDATION] Found DateTimeOriginal (36867): {date_time_original}")
         elif 306 in exif_data:
             date_time = exif_data[306]
+            print(f"[IMAGE_VALIDATION] Found DateTime (306): {date_time}")
+        else:
+            print("[IMAGE_VALIDATION] WARNING: Neither DateTimeOriginal (36867) nor DateTime (306) found in EXIF")
+            # Try to find any date-related tags
+            date_tags = {k: v for k, v in exif_data.items() if 'date' in str(v).lower() or 'time' in str(v).lower()}
+            if date_tags:
+                print(f"[IMAGE_VALIDATION] Found potential date tags: {date_tags}")
+            else:
+                print("[IMAGE_VALIDATION] No date-related tags found in EXIF data")
         
         # Use DateTimeOriginal if available, otherwise DateTime
         exif_datetime = date_time_original or date_time
         
         if not exif_datetime:
+            print("[IMAGE_VALIDATION] ERROR: No datetime found in EXIF data")
+            print(f"[IMAGE_VALIDATION] Full EXIF dump (first 20 items): {dict(list(exif_data.items())[:20])}")
             return False, "📸 Hmm, this photo doesn't have date info! Make sure you're taking a fresh photo with your camera (not a screenshot)."
+        
+        print(f"[IMAGE_VALIDATION] Using datetime: {exif_datetime} (type: {type(exif_datetime)})")
         
         # Parse EXIF datetime format: "YYYY:MM:DD HH:MM:SS"
         try:
             exif_date_str = str(exif_datetime).split()[0]  # Get date part
+            print(f"[IMAGE_VALIDATION] Parsed date string: {exif_date_str}")
             exif_date = datetime.strptime(exif_date_str, "%Y:%m:%d").date()
+            print(f"[IMAGE_VALIDATION] Parsed date: {exif_date}, Expected: {expected_date}")
+            
             if exif_date != expected_date:
+                print(f"[IMAGE_VALIDATION] Date mismatch! Photo date: {exif_date}, Expected: {expected_date}")
                 import random
                 return False, random.choice(quirky_messages)
+            
+            print("[IMAGE_VALIDATION] SUCCESS: Date validation passed!")
             return True, ""
-        except (ValueError, IndexError, AttributeError):
+        except (ValueError, IndexError, AttributeError) as parse_error:
+            print(f"[IMAGE_VALIDATION] ERROR parsing date: {parse_error}")
+            print(f"[IMAGE_VALIDATION] Datetime value was: {exif_datetime} (type: {type(exif_datetime)})")
             return False, "📸 Couldn't read the photo's date! Make sure it's a fresh photo taken today."
             
     except Exception as e:
-        print(f"Error validating image: {e}")
+        print(f"[IMAGE_VALIDATION] ERROR validating image: {e}")
+        import traceback
+        print(f"[IMAGE_VALIDATION] Traceback: {traceback.format_exc()}")
         return False, "📸 Something went wrong reading your photo! Try taking a fresh one."
 
 
