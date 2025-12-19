@@ -2,7 +2,8 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from datetime import date
 
-from . import models, database
+import models
+import database
 
 models.Base.metadata.create_all(bind=database.engine)
 
