@@ -32,7 +32,7 @@ import database
 # Create all tables (only creates if they don't exist, doesn't alter existing tables)
 # For production, run migrations separately
 try:
-    models.Base.metadata.create_all(bind=database.engine)
+models.Base.metadata.create_all(bind=database.engine)
 except Exception as e:
     print(f"Warning: Could not create tables: {e}")
     print("If tables already exist, this is normal. Run migrate_db.py to update schema.")
@@ -270,6 +270,7 @@ def get_current_user_info(current_user: models.User = Depends(get_current_user))
 def validate_image_date(image_path: str, expected_date: date) -> tuple[bool, str]:
     """
     Validate that image was taken on the expected date using EXIF data.
+    Falls back to file modification time for PNG files that don't have EXIF date.
     Returns (is_valid, quirky_error_message)
     """
     quirky_messages = [
@@ -285,46 +286,84 @@ def validate_image_date(image_path: str, expected_date: date) -> tuple[bool, str
         print(f"[IMAGE_VALIDATION] Expected date: {expected_date}")
         
         img = Image.open(image_path)
-        print(f"[IMAGE_VALIDATION] Image opened successfully. Format: {img.format}, Size: {img.size}")
+        image_format = img.format
+        print(f"[IMAGE_VALIDATION] Image opened successfully. Format: {image_format}, Size: {img.size}")
         
         exif_data = img.getexif()
         print(f"[IMAGE_VALIDATION] EXIF data type: {type(exif_data)}, Is None: {exif_data is None}")
         
-        if exif_data is None:
-            print("[IMAGE_VALIDATION] ERROR: No EXIF data found in image")
-            return False, "📸 Hmm, this photo doesn't have date info! Make sure you're taking a fresh photo with your camera (not a screenshot)."
-        
-        # Log all available EXIF tags
-        print(f"[IMAGE_VALIDATION] EXIF data has {len(exif_data)} tags")
-        if len(exif_data) > 0:
-            print(f"[IMAGE_VALIDATION] Available EXIF tag IDs: {list(exif_data.keys())[:10]}...")  # Show first 10
-        
         # EXIF tag IDs: 306 = DateTime, 36867 = DateTimeOriginal
         date_time = None
         date_time_original = None
+        exif_datetime = None
         
-        # Try to get DateTimeOriginal (tag 36867) first, then DateTime (tag 306)
-        if 36867 in exif_data:
-            date_time_original = exif_data[36867]
-            print(f"[IMAGE_VALIDATION] Found DateTimeOriginal (36867): {date_time_original}")
-        elif 306 in exif_data:
-            date_time = exif_data[306]
-            print(f"[IMAGE_VALIDATION] Found DateTime (306): {date_time}")
-        else:
-            print("[IMAGE_VALIDATION] WARNING: Neither DateTimeOriginal (36867) nor DateTime (306) found in EXIF")
-            # Try to find any date-related tags
-            date_tags = {k: v for k, v in exif_data.items() if 'date' in str(v).lower() or 'time' in str(v).lower()}
-            if date_tags:
-                print(f"[IMAGE_VALIDATION] Found potential date tags: {date_tags}")
+        if exif_data is not None:
+            # Log all available EXIF tags
+            print(f"[IMAGE_VALIDATION] EXIF data has {len(exif_data)} tags")
+            if len(exif_data) > 0:
+                print(f"[IMAGE_VALIDATION] Available EXIF tag IDs: {list(exif_data.keys())[:10]}...")  # Show first 10
+            
+            # Try to get DateTimeOriginal (tag 36867) first, then DateTime (tag 306)
+            if 36867 in exif_data:
+                date_time_original = exif_data[36867]
+                print(f"[IMAGE_VALIDATION] Found DateTimeOriginal (36867): {date_time_original}")
+            elif 306 in exif_data:
+                date_time = exif_data[306]
+                print(f"[IMAGE_VALIDATION] Found DateTime (306): {date_time}")
             else:
-                print("[IMAGE_VALIDATION] No date-related tags found in EXIF data")
+                print("[IMAGE_VALIDATION] WARNING: Neither DateTimeOriginal (36867) nor DateTime (306) found in EXIF")
+                # Try to find any date-related tags
+                date_tags = {k: v for k, v in exif_data.items() if 'date' in str(v).lower() or 'time' in str(v).lower()}
+                if date_tags:
+                    print(f"[IMAGE_VALIDATION] Found potential date tags: {date_tags}")
+                else:
+                    print("[IMAGE_VALIDATION] No date-related tags found in EXIF data")
+            
+            # Use DateTimeOriginal if available, otherwise DateTime
+            exif_datetime = date_time_original or date_time
         
-        # Use DateTimeOriginal if available, otherwise DateTime
-        exif_datetime = date_time_original or date_time
+        # If no EXIF datetime found, try file modification time as fallback (especially for PNG)
+        if not exif_datetime:
+            print("[IMAGE_VALIDATION] No EXIF datetime found, trying file modification time as fallback...")
+            try:
+                file_mtime = os.path.getmtime(image_path)
+                file_date = datetime.fromtimestamp(file_mtime).date()
+                print(f"[IMAGE_VALIDATION] File modification date: {file_date}")
+                
+                # For PNG files or images without EXIF, use file modification time
+                # But only if it's today (to prevent using old files)
+                if file_date == expected_date:
+                    print("[IMAGE_VALIDATION] SUCCESS: File modification date matches expected date!")
+                    return True, ""
+                else:
+                    print(f"[IMAGE_VALIDATION] File modification date ({file_date}) doesn't match expected ({expected_date})")
+                    # Still allow if file was modified today (might be a fresh upload)
+                    if file_date == date.today():
+                        print("[IMAGE_VALIDATION] File was modified today, allowing it")
+                        return True, ""
+                    else:
+                        import random
+                        return False, random.choice(quirky_messages)
+            except Exception as mtime_error:
+                print(f"[IMAGE_VALIDATION] Error getting file modification time: {mtime_error}")
         
         if not exif_datetime:
-            print("[IMAGE_VALIDATION] ERROR: No datetime found in EXIF data")
-            print(f"[IMAGE_VALIDATION] Full EXIF dump (first 20 items): {dict(list(exif_data.items())[:20])}")
+            print("[IMAGE_VALIDATION] ERROR: No datetime found in EXIF data and file modification time check failed")
+            if exif_data:
+                print(f"[IMAGE_VALIDATION] Full EXIF dump (first 20 items): {dict(list(exif_data.items())[:20])}")
+            
+            # For PNG files, be more lenient - use file modification time
+            if image_format == 'PNG':
+                print("[IMAGE_VALIDATION] PNG format detected - using file modification time")
+                try:
+                    file_mtime = os.path.getmtime(image_path)
+                    file_date = datetime.fromtimestamp(file_mtime).date()
+                    if file_date == expected_date or file_date == date.today():
+                        print(f"[IMAGE_VALIDATION] PNG file modification date ({file_date}) accepted")
+                        return True, ""
+                except:
+                    pass
+            
             return False, "📸 Hmm, this photo doesn't have date info! Make sure you're taking a fresh photo with your camera (not a screenshot)."
         
         print(f"[IMAGE_VALIDATION] Using datetime: {exif_datetime} (type: {type(exif_datetime)})")
@@ -346,6 +385,18 @@ def validate_image_date(image_path: str, expected_date: date) -> tuple[bool, str
         except (ValueError, IndexError, AttributeError) as parse_error:
             print(f"[IMAGE_VALIDATION] ERROR parsing date: {parse_error}")
             print(f"[IMAGE_VALIDATION] Datetime value was: {exif_datetime} (type: {type(exif_datetime)})")
+            
+            # Fallback to file modification time if EXIF parsing fails
+            print("[IMAGE_VALIDATION] Trying file modification time as fallback...")
+            try:
+                file_mtime = os.path.getmtime(image_path)
+                file_date = datetime.fromtimestamp(file_mtime).date()
+                if file_date == expected_date or file_date == date.today():
+                    print(f"[IMAGE_VALIDATION] File modification date ({file_date}) accepted as fallback")
+                    return True, ""
+            except:
+                pass
+            
             return False, "📸 Couldn't read the photo's date! Make sure it's a fresh photo taken today."
             
     except Exception as e:
