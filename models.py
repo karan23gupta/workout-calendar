@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Date
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from .database import Base
+from database import Base
 
 class Workout(Base):
     __tablename__ = "workouts"
