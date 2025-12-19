@@ -32,7 +32,7 @@ import database
 # Create all tables (only creates if they don't exist, doesn't alter existing tables)
 # For production, run migrations separately
 try:
-models.Base.metadata.create_all(bind=database.engine)
+    models.Base.metadata.create_all(bind=database.engine)
 except Exception as e:
     print(f"Warning: Could not create tables: {e}")
     print("If tables already exist, this is normal. Run migrate_db.py to update schema.")
