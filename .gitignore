@@ -39,3 +39,10 @@ uploads/
 *.gif
 *.webp
 
+# But allow icon files in public folder
+!frontend/public/*.png
+!frontend/public/*.jpg
+!frontend/public/*.jpeg
+!frontend/public/*.gif
+!frontend/public/*.webp
+
