@@ -89,7 +89,11 @@ function WorkoutModal({ date, isOpen, onClose, existingWorkout, onWorkoutUpdated
           </div>
         )}
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+        <div className="error-message quirky-error">
+          {error}
+        </div>
+      )}
 
         {hasWorkout && (
           <div className="existing-workout">

@@ -12,6 +12,8 @@ import bcrypt
 import os
 from PIL import Image
 from PIL.ExifTags import TAGS
+import cv2
+import numpy as np
 import os
 import aiofiles
 import uuid
@@ -258,14 +260,25 @@ def get_current_user_info(current_user: models.User = Depends(get_current_user))
     }
 
 
-def validate_image_date(image_path: str, expected_date: date) -> bool:
-    """Validate that image was taken on the expected date using EXIF data"""
+def validate_image_date(image_path: str, expected_date: date) -> tuple[bool, str]:
+    """
+    Validate that image was taken on the expected date using EXIF data.
+    Returns (is_valid, quirky_error_message)
+    """
+    quirky_messages = [
+        "🕐 Oops! This photo is from the past! Time travel isn't allowed here. Take a fresh gym selfie today! 💪",
+        "📅 Nice try, but this photo's timestamp says it's not from today! Snap a new one right now! 📸",
+        "⏰ This selfie is time-stamped for another day! We need TODAY's gym proof. Get that camera ready! 🏋️",
+        "🗓️ The metadata doesn't lie - this photo is from a different day! Fresh selfie, please! ✨",
+        "📆 Calendar says nope! This photo isn't from today. Time to strike a pose at the gym! 💃"
+    ]
+    
     try:
         img = Image.open(image_path)
         exif_data = img.getexif()
         
         if exif_data is None:
-            return False
+            return False, "📸 Hmm, this photo doesn't have date info! Make sure you're taking a fresh photo with your camera (not a screenshot)."
         
         # EXIF tag IDs: 306 = DateTime, 36867 = DateTimeOriginal
         date_time = None
@@ -281,19 +294,85 @@ def validate_image_date(image_path: str, expected_date: date) -> bool:
         exif_datetime = date_time_original or date_time
         
         if not exif_datetime:
-            return False
+            return False, "📸 Hmm, this photo doesn't have date info! Make sure you're taking a fresh photo with your camera (not a screenshot)."
         
         # Parse EXIF datetime format: "YYYY:MM:DD HH:MM:SS"
         try:
             exif_date_str = str(exif_datetime).split()[0]  # Get date part
             exif_date = datetime.strptime(exif_date_str, "%Y:%m:%d").date()
-            return exif_date == expected_date
+            if exif_date != expected_date:
+                import random
+                return False, random.choice(quirky_messages)
+            return True, ""
         except (ValueError, IndexError, AttributeError):
-            return False
+            return False, "📸 Couldn't read the photo's date! Make sure it's a fresh photo taken today."
             
     except Exception as e:
         print(f"Error validating image: {e}")
-        return False
+        return False, "📸 Something went wrong reading your photo! Try taking a fresh one."
+
+
+def validate_gym_selfie(image_path: str) -> tuple[bool, str]:
+    """
+    Basic validation to check if image is likely a gym selfie.
+    Returns (is_valid, quirky_error_message)
+    """
+    quirky_messages = [
+        "🤳 Hmm, this doesn't look like a gym selfie! We need to see YOU at the gym, not random photos! 💪",
+        "📷 This photo seems suspicious... We're looking for a real gym selfie with you in it! 🏋️",
+        "🖼️ Nice photo, but we need proof you're actually at the gym! Show us that selfie! 📸",
+        "🎯 We can't verify this is a gym selfie! Make sure you're in the photo at the gym! 💪",
+        "📱 This looks like it might not be a selfie! We need YOU in the gym, camera ready! ✨"
+    ]
+    
+    try:
+        # Read image with OpenCV
+        img = cv2.imread(image_path)
+        if img is None:
+            return False, "📸 Couldn't read the image! Make sure it's a valid photo file."
+        
+        # Convert to grayscale for face detection
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Load face cascade classifier
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        
+        # Detect faces
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        
+        # Check image dimensions (selfies are usually portrait or square)
+        height, width = img.shape[:2]
+        aspect_ratio = width / height if height > 0 else 0
+        
+        # Basic heuristics:
+        # 1. Should have at least one face (selfie indicator)
+        # 2. Aspect ratio should be reasonable (not extremely wide or tall)
+        # 3. Image should be reasonably sized
+        
+        has_face = len(faces) > 0
+        reasonable_aspect = 0.5 <= aspect_ratio <= 2.0  # Portrait to landscape, but not extreme
+        reasonable_size = width >= 200 and height >= 200  # Not too small
+        
+        # If no face detected, it's probably not a selfie
+        if not has_face:
+            import random
+            return False, random.choice(quirky_messages)
+        
+        # If aspect ratio is too extreme, might be suspicious
+        if not reasonable_aspect:
+            return False, "📐 This photo's dimensions look unusual! Make sure it's a proper selfie photo."
+        
+        # If too small, might be a thumbnail
+        if not reasonable_size:
+            return False, "🔍 This photo seems too small! Make sure you're uploading the full-size image."
+        
+        # If we get here, it passes basic validation
+        return True, ""
+        
+    except Exception as e:
+        print(f"Error validating gym selfie: {e}")
+        # If face detection fails, we'll be lenient but warn
+        return True, ""  # Allow it through, but log the error
 
 
 # Workout endpoints (require authentication)
@@ -373,11 +452,21 @@ async def create_workout(
             await f.write(content)
         
         # Validate image was taken today
-        if not validate_image_date(temp_path, today):
+        is_valid_date, date_error_msg = validate_image_date(temp_path, today)
+        if not is_valid_date:
             os.remove(temp_path)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Image metadata shows this photo was not taken today. Please upload a gym selfie taken today."
+                detail=date_error_msg
+            )
+        
+        # Validate it's a gym selfie
+        is_valid_selfie, selfie_error_msg = validate_gym_selfie(temp_path)
+        if not is_valid_selfie:
+            os.remove(temp_path)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=selfie_error_msg
             )
         
         # Generate permanent filename
