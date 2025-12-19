@@ -28,6 +28,7 @@ function Calendar({ currentDate, workouts, onDateClick, onMonthChange }) {
   }
 
   const formatDateString = (year, month, day) => {
+    // month is 0-indexed (0-11), so add 1 to get actual month (1-12)
     const monthStr = String(month + 1).padStart(2, '0')
     const dayStr = String(day).padStart(2, '0')
     return `${year}-${monthStr}-${dayStr}`
@@ -43,12 +44,14 @@ function Calendar({ currentDate, workouts, onDateClick, onMonthChange }) {
   }
 
   const isWorkoutDay = (day) => {
-    const dateString = formatDateString(year, month + 1, day)
+    // month is already 0-indexed, formatDateString will add 1
+    const dateString = formatDateString(year, month, day)
     return workouts.has(dateString)
   }
 
   const handleDayClick = (day) => {
-    const dateString = formatDateString(year, month + 1, day)
+    // month is already 0-indexed, formatDateString will add 1
+    const dateString = formatDateString(year, month, day)
     onDateClick(dateString)
   }
 
@@ -62,7 +65,8 @@ function Calendar({ currentDate, workouts, onDateClick, onMonthChange }) {
 
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateString = formatDateString(year, month + 1, day)
+      // month is already 0-indexed, formatDateString will add 1
+      const dateString = formatDateString(year, month, day)
       const workout = isWorkoutDay(day)
       const today = isToday(day)
       

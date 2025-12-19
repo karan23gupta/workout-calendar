@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import date, timedelta
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 import models
 import database
@@ -45,6 +45,29 @@ class StreakResponse(BaseModel):
 
 class WorkoutDate(BaseModel):
     date: str
+    
+    @field_validator('date')
+    @classmethod
+    def validate_date(cls, v: str) -> str:
+        """Validate date format and ensure it's a valid date"""
+        if not v:
+            raise ValueError("Date cannot be empty")
+        
+        # Try to parse the date
+        try:
+            date_obj = date.fromisoformat(v)
+        except ValueError as e:
+            # Provide more helpful error message
+            if "Invalid isoformat string" in str(e) or "month must be in 1..12" in str(e):
+                raise ValueError(f"Invalid date: '{v}'. Month must be between 01-12. Use format YYYY-MM-DD (e.g., 2025-01-20)")
+            raise ValueError(f"Invalid date format: '{v}'. Use YYYY-MM-DD format (e.g., 2025-01-20)")
+        
+        # Optional: Reject future dates (uncomment if you want to prevent future dates)
+        # today = date.today()
+        # if date_obj > today:
+        #     raise ValueError(f"Date cannot be in the future. Today is {today}")
+        
+        return v
 
 
 @app.get("/api/workouts", response_model=List[WorkoutResponse])
@@ -57,10 +80,8 @@ def get_workouts(db: Session = Depends(get_db)):
 @app.post("/api/workouts", response_model=WorkoutResponse)
 def toggle_workout(workout_date: WorkoutDate, db: Session = Depends(get_db)):
     """Toggle workout status for a date (create if doesn't exist, delete if exists)"""
-    try:
-        workout_date_obj = date.fromisoformat(workout_date.date)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    # Date is already validated by Pydantic, so we can safely parse it
+    workout_date_obj = date.fromisoformat(workout_date.date)
     
     existing = db.query(models.Workout).filter(models.Workout.date == workout_date_obj).first()
     
