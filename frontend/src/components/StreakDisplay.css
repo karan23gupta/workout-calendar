@@ -34,14 +34,62 @@
   opacity: 0.8;
 }
 
+/* Tablet */
 @media (max-width: 768px) {
   .streak-display {
     grid-template-columns: 1fr;
     gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .streak-card {
+    padding: 20px;
   }
 
   .streak-value {
     font-size: 2.5rem;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+  .streak-display {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .streak-card {
+    padding: 18px;
+    border-radius: 10px;
+  }
+
+  .streak-label {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+
+  .streak-value {
+    font-size: 2.25rem;
+    margin: 6px 0;
+  }
+
+  .streak-unit {
+    font-size: 0.85rem;
+  }
+}
+
+/* Small phones */
+@media (max-width: 360px) {
+  .streak-card {
+    padding: 16px;
+  }
+
+  .streak-value {
+    font-size: 2rem;
+  }
+
+  .streak-label {
+    font-size: 0.8rem;
   }
 }
 

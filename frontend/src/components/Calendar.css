@@ -7,6 +7,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  gap: 12px;
 }
 
 .nav-button {
@@ -22,6 +23,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  touch-action: manipulation;
 }
 
 .nav-button:hover {
@@ -30,13 +33,17 @@
 }
 
 .nav-button:active {
-  transform: translateY(0);
+  transform: scale(0.95);
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
 }
 
 .month-year {
   font-size: 1.5rem;
   color: #333;
   font-weight: 600;
+  text-align: center;
+  flex: 1;
+  line-height: 1.2;
 }
 
 .calendar-grid {
@@ -44,12 +51,14 @@
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 20px;
+  width: 100%;
+  overflow: hidden;
 }
 
 .calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 8px;
 }
 
@@ -58,13 +67,13 @@
   font-weight: 600;
   color: #666;
   font-size: 0.9rem;
-  padding: 8px;
+  padding: 8px 4px;
 }
 
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .calendar-day {
@@ -80,12 +89,18 @@
   transition: all 0.2s;
   position: relative;
   min-height: 60px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .calendar-day:hover {
   border-color: #667eea;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-day:active {
+  transform: scale(0.95);
 }
 
 .calendar-day.workout {
@@ -112,6 +127,21 @@
 .calendar-day.empty:hover {
   transform: none;
   box-shadow: none;
+}
+
+.calendar-day.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.calendar-day.disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #e9ecef;
+}
+
+.calendar-day.empty:active {
+  transform: none;
 }
 
 .day-number {
@@ -144,6 +174,7 @@
   height: 24px;
   border-radius: 6px;
   border: 2px solid #e9ecef;
+  flex-shrink: 0;
 }
 
 .legend-box.today {
@@ -157,13 +188,34 @@
   border-color: #667eea;
 }
 
+/* Tablet */
 @media (max-width: 768px) {
+  .calendar-header {
+    margin-bottom: 20px;
+  }
+
   .calendar-grid {
     padding: 12px;
+    border-radius: 10px;
+  }
+
+  .calendar-weekdays {
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+
+  .weekday {
+    font-size: 0.85rem;
+    padding: 6px 2px;
+  }
+
+  .calendar-days {
+    gap: 4px;
   }
 
   .calendar-day {
     min-height: 50px;
+    border-radius: 6px;
   }
 
   .day-number {
@@ -179,9 +231,155 @@
   }
 
   .nav-button {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+  }
+
+  .calendar-legend {
+    gap: 20px;
+  }
+
+  .legend-item {
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+  .calendar-header {
+    margin-bottom: 16px;
+    gap: 8px;
+  }
+
+  .calendar-grid {
+    padding: 8px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+
+  .calendar-weekdays {
+    gap: 3px;
+    margin-bottom: 4px;
+  }
+
+  .weekday {
+    font-size: 0.75rem;
+    padding: 4px 2px;
+    font-weight: 600;
+  }
+
+  .calendar-days {
+    gap: 3px;
+  }
+
+  .calendar-day {
+    min-height: 44px;
+    border-radius: 6px;
+    border-width: 2px;
+  }
+
+  .calendar-day.today {
+    border-width: 2.5px;
+  }
+
+  .day-number {
+    font-size: 0.85rem;
+  }
+
+  .workout-indicator {
+    font-size: 0.9rem;
+    margin-top: 1px;
+  }
+
+  .month-year {
+    font-size: 1.1rem;
+  }
+
+  .nav-button {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+    border-radius: 10px;
+  }
+
+  .calendar-legend {
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  .legend-item {
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+
+  .legend-box {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Small phones (iPhone SE, etc.) */
+@media (max-width: 360px) {
+  .calendar-header {
+    margin-bottom: 12px;
+  }
+
+  .calendar-grid {
+    padding: 6px;
+  }
+
+  .weekday {
+    font-size: 0.7rem;
+    padding: 3px 1px;
+  }
+
+  .calendar-day {
+    min-height: 40px;
+    border-width: 1.5px;
+  }
+
+  .calendar-day.today {
+    border-width: 2px;
+  }
+
+  .day-number {
+    font-size: 0.8rem;
+  }
+
+  .workout-indicator {
+    font-size: 0.85rem;
+  }
+
+  .month-year {
     font-size: 1rem;
+  }
+
+  .nav-button {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+  }
+
+  .calendar-legend {
+    gap: 12px;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .legend-item {
+    font-size: 0.75rem;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .calendar-day {
+    min-height: 50px;
+  }
+
+  .calendar-grid {
+    padding: 10px;
   }
 }
 

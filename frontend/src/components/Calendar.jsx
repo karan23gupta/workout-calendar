@@ -49,7 +49,21 @@ function Calendar({ currentDate, workouts, onDateClick, onMonthChange }) {
     return workouts.has(dateString)
   }
 
+  const getWorkoutForDay = (day) => {
+    const dateString = formatDateString(year, month, day)
+    return workouts.get(dateString)
+  }
+
+  const canClickDay = (day) => {
+    const dateString = formatDateString(year, month, day)
+    const today = new Date().toISOString().split('T')[0]
+    return dateString === today
+  }
+
   const handleDayClick = (day) => {
+    if (!canClickDay(day)) {
+      return // Only allow clicking today
+    }
     // month is already 0-indexed, formatDateString will add 1
     const dateString = formatDateString(year, month, day)
     onDateClick(dateString)
@@ -67,14 +81,16 @@ function Calendar({ currentDate, workouts, onDateClick, onMonthChange }) {
     for (let day = 1; day <= daysInMonth; day++) {
       // month is already 0-indexed, formatDateString will add 1
       const dateString = formatDateString(year, month, day)
-      const workout = isWorkoutDay(day)
+      const workout = getWorkoutForDay(day)
       const today = isToday(day)
+      const clickable = canClickDay(day)
       
       days.push(
         <div
           key={day}
-          className={`calendar-day ${workout ? 'workout' : ''} ${today ? 'today' : ''}`}
+          className={`calendar-day ${workout ? 'workout' : ''} ${today ? 'today' : ''} ${!clickable ? 'disabled' : ''}`}
           onClick={() => handleDayClick(day)}
+          title={!clickable ? (today ? 'Click to mark workout' : 'You can only mark today\'s workout') : (workout ? 'View workout details' : 'Mark workout as done')}
         >
           <span className="day-number">{day}</span>
           {workout && <span className="workout-indicator">✓</span>}
