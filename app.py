@@ -8,7 +8,8 @@ from datetime import date, timedelta, datetime
 from typing import List, Optional
 from pydantic import BaseModel, field_validator, EmailStr
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
+import os
 from PIL import Image
 from PIL.ExifTags import TAGS
 import os
@@ -42,7 +43,6 @@ SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 def get_db():
@@ -54,11 +54,22 @@ def get_db():
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password against a bcrypt hash"""
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'),
+            hashed_password.encode('utf-8')
+        )
+    except Exception:
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hash a password using bcrypt"""
+    # Generate salt and hash password
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
 
 
 def create_access_token(data: dict):
