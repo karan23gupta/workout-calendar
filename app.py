@@ -12,12 +12,19 @@ import bcrypt
 import os
 from PIL import Image
 from PIL.ExifTags import TAGS
-import cv2
-import numpy as np
 import os
 import aiofiles
 import uuid
 import shutil
+
+# Try to import OpenCV for face detection, but make it optional
+try:
+    import cv2
+    import numpy as np
+    CV2_AVAILABLE = True
+except ImportError:
+    CV2_AVAILABLE = False
+    print("Warning: OpenCV not available. Face detection will be skipped.")
 
 import models
 import database
@@ -25,7 +32,7 @@ import database
 # Create all tables (only creates if they don't exist, doesn't alter existing tables)
 # For production, run migrations separately
 try:
-    models.Base.metadata.create_all(bind=database.engine)
+models.Base.metadata.create_all(bind=database.engine)
 except Exception as e:
     print(f"Warning: Could not create tables: {e}")
     print("If tables already exist, this is normal. Run migrate_db.py to update schema.")
@@ -326,53 +333,56 @@ def validate_gym_selfie(image_path: str) -> tuple[bool, str]:
     ]
     
     try:
-        # Read image with OpenCV
-        img = cv2.imread(image_path)
-        if img is None:
-            return False, "📸 Couldn't read the image! Make sure it's a valid photo file."
+        # Basic validation using PIL (always available)
+        with Image.open(image_path) as img:
+            width, height = img.size
+            
+            # Check image dimensions
+            aspect_ratio = width / height if height > 0 else 0
+            reasonable_aspect = 0.3 <= aspect_ratio <= 3.0  # Allow wider range for selfies
+            reasonable_size = width >= 200 and height >= 200  # Not too small
+            
+            # If aspect ratio is too extreme, might be suspicious
+            if not reasonable_aspect:
+                return False, "📐 This photo's dimensions look unusual! Make sure it's a proper selfie photo."
+            
+            # If too small, might be a thumbnail
+            if not reasonable_size:
+                return False, "🔍 This photo seems too small! Make sure you're uploading the full-size image."
         
-        # Convert to grayscale for face detection
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        
-        # Load face cascade classifier
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        
-        # Detect faces
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-        
-        # Check image dimensions (selfies are usually portrait or square)
-        height, width = img.shape[:2]
-        aspect_ratio = width / height if height > 0 else 0
-        
-        # Basic heuristics:
-        # 1. Should have at least one face (selfie indicator)
-        # 2. Aspect ratio should be reasonable (not extremely wide or tall)
-        # 3. Image should be reasonably sized
-        
-        has_face = len(faces) > 0
-        reasonable_aspect = 0.5 <= aspect_ratio <= 2.0  # Portrait to landscape, but not extreme
-        reasonable_size = width >= 200 and height >= 200  # Not too small
-        
-        # If no face detected, it's probably not a selfie
-        if not has_face:
-            import random
-            return False, random.choice(quirky_messages)
-        
-        # If aspect ratio is too extreme, might be suspicious
-        if not reasonable_aspect:
-            return False, "📐 This photo's dimensions look unusual! Make sure it's a proper selfie photo."
-        
-        # If too small, might be a thumbnail
-        if not reasonable_size:
-            return False, "🔍 This photo seems too small! Make sure you're uploading the full-size image."
+        # If OpenCV is available, try face detection
+        if CV2_AVAILABLE:
+            try:
+                # Read image with OpenCV
+                img_cv = cv2.imread(image_path)
+                if img_cv is None:
+                    return True, ""  # Can't read with OpenCV, but PIL worked, so allow it
+                
+                # Convert to grayscale for face detection
+                gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+                
+                # Load face cascade classifier
+                face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+                
+                # Detect faces
+                faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+                
+                # If no face detected, it's probably not a selfie
+                if len(faces) == 0:
+                    import random
+                    return False, random.choice(quirky_messages)
+            except Exception as e:
+                print(f"Face detection error (non-critical): {e}")
+                # If face detection fails, allow it through (be lenient)
+                pass
         
         # If we get here, it passes basic validation
         return True, ""
         
     except Exception as e:
         print(f"Error validating gym selfie: {e}")
-        # If face detection fails, we'll be lenient but warn
-        return True, ""  # Allow it through, but log the error
+        # If validation fails completely, be lenient and allow it
+        return True, ""
 
 
 # Workout endpoints (require authentication)
