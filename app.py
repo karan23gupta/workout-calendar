@@ -161,6 +161,18 @@ class StreakResponse(BaseModel):
     longest_streak: int
 
 
+class LeaderboardEntry(BaseModel):
+    rank: int
+    username: str
+    total_workouts: int
+    current_streak: int
+    longest_streak: int
+    user_id: str
+
+    class Config:
+        from_attributes = True
+
+
 class WorkoutDate(BaseModel):
     date: str
     
@@ -736,6 +748,60 @@ def get_streaks(
         "current_streak": current_streak,
         "longest_streak": longest_streak
     }
+
+
+@app.get("/api/leaderboard", response_model=List[LeaderboardEntry])
+def get_leaderboard(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get leaderboard ranking all users by total workouts, current streak, and longest streak"""
+    # Get all users
+    all_users = db.query(models.User).all()
+    
+    today = date.today()
+    leaderboard_data = []
+    
+    for user in all_users:
+        # Get all workouts for this user
+        workouts = db.query(models.Workout).filter(
+            models.Workout.user_id == user.id
+        ).all()
+        
+        workout_dates = [w.date for w in workouts]
+        total_workouts = len(workout_dates)
+        
+        # Calculate streaks
+        current_streak, longest_streak = calculate_streaks(workout_dates, today)
+        
+        leaderboard_data.append({
+            "user_id": str(user.id),
+            "username": user.username,
+            "total_workouts": total_workouts,
+            "current_streak": current_streak,
+            "longest_streak": longest_streak
+        })
+    
+    # Sort by: 1) total_workouts (desc), 2) current_streak (desc), 3) longest_streak (desc)
+    leaderboard_data.sort(
+        key=lambda x: (x["total_workouts"], x["current_streak"], x["longest_streak"]),
+        reverse=True
+    )
+    
+    # Add rank (handle ties by giving same rank)
+    ranked_data = []
+    current_rank = 1
+    prev_stats = None
+    
+    for entry in leaderboard_data:
+        stats = (entry["total_workouts"], entry["current_streak"], entry["longest_streak"])
+        if prev_stats and stats != prev_stats:
+            current_rank = len(ranked_data) + 1
+        entry["rank"] = current_rank
+        ranked_data.append(entry)
+        prev_stats = stats
+    
+    return ranked_data
 
 
 @app.get("/api/health")

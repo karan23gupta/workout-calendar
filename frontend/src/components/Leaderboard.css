@@ -1,0 +1,236 @@
+.leaderboard-container {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-title {
+  font-size: 1.75rem;
+  color: #333;
+  margin-bottom: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.leaderboard-subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.empty-leaderboard {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-size: 1rem;
+}
+
+.leaderboard-table {
+  width: 100%;
+}
+
+.leaderboard-header {
+  display: grid;
+  grid-template-columns: 60px 1fr 80px 80px 80px;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 80px 80px 80px;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: #fff;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  align-items: center;
+}
+
+.leaderboard-row:hover {
+  background: #f8f9fa;
+  border-color: #e0e0e0;
+}
+
+.leaderboard-row.current-user {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border-color: #667eea;
+  font-weight: 600;
+}
+
+.leaderboard-row.rank-first {
+  background: linear-gradient(135deg, #ffd70020 0%, #ffed4e20 100%);
+  border-color: #ffd700;
+}
+
+.leaderboard-row.rank-second {
+  background: linear-gradient(135deg, #c0c0c020 0%, #e8e8e820 100%);
+  border-color: #c0c0c0;
+}
+
+.leaderboard-row.rank-third {
+  background: linear-gradient(135deg, #cd7f3220 0%, #e6a05720 100%);
+  border-color: #cd7f32;
+}
+
+.row-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.rank-icon {
+  font-size: 1.5rem;
+}
+
+.row-username {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.username-text {
+  color: #333;
+}
+
+.you-badge {
+  background: #667eea;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.row-stat {
+  text-align: center;
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.error {
+  color: #e74c3c;
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .leaderboard-container {
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .leaderboard-title {
+    font-size: 1.5rem;
+  }
+
+  .leaderboard-header,
+  .leaderboard-row {
+    grid-template-columns: 50px 1fr 70px 70px 70px;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .header-stat,
+  .row-stat {
+    font-size: 0.9rem;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+  .leaderboard-container {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .leaderboard-title {
+    font-size: 1.35rem;
+  }
+
+  .leaderboard-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+
+  .leaderboard-header {
+    display: none; /* Hide header on mobile */
+  }
+
+  .leaderboard-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .row-rank {
+    justify-content: flex-start;
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+  }
+
+  .row-username {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+
+  .row-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.95rem;
+  }
+
+  .row-stat:last-child {
+    border-bottom: none;
+  }
+
+  .row-stat::before {
+    content: attr(data-label) ': ';
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+  }
+}
+
+/* Small phones */
+@media (max-width: 360px) {
+  .leaderboard-container {
+    padding: 12px;
+  }
+
+  .leaderboard-title {
+    font-size: 1.2rem;
+  }
+
+  .leaderboard-row {
+    padding: 12px;
+  }
+}

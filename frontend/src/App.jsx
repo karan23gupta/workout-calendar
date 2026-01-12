@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Calendar from './components/Calendar'
 import StreakDisplay from './components/StreakDisplay'
+import Leaderboard from './components/Leaderboard'
 import Login from './components/Login'
 import WorkoutModal from './components/WorkoutModal'
 import { fetchWorkouts, fetchStreaks, isAuthenticated, getCurrentUser, logout } from './api'
@@ -117,6 +118,8 @@ function App() {
         currentStreak={streaks.current_streak}
         longestStreak={streaks.longest_streak}
       />
+      
+      <Leaderboard currentUserId={user?.id} />
       
       <Calendar
         currentDate={currentDate}

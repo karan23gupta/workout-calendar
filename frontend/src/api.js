@@ -147,3 +147,7 @@ export const fetchStreaks = async () => {
 export const getCurrentUserInfo = async () => {
   return fetchWithAuth('/api/me')
 }
+
+export const fetchLeaderboard = async () => {
+  return fetchWithAuth('/api/leaderboard')
+}
