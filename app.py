@@ -755,24 +755,44 @@ def get_leaderboard(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get leaderboard ranking all users by total workouts, current streak, and longest streak"""
+    """Get monthly leaderboard ranking all users by workouts in current month, current streak, and longest streak"""
     # Get all users
     all_users = db.query(models.User).all()
     
     today = date.today()
+    # Get first day of current month
+    first_day_of_month = date(today.year, today.month, 1)
+    # Get first day of next month for filtering
+    if today.month == 12:
+        first_day_of_next_month = date(today.year + 1, 1, 1)
+    else:
+        first_day_of_next_month = date(today.year, today.month + 1, 1)
+    
     leaderboard_data = []
     
     for user in all_users:
-        # Get all workouts for this user
-        workouts = db.query(models.Workout).filter(
+        # Get all workouts for this user (for streaks calculation)
+        all_workouts = db.query(models.Workout).filter(
             models.Workout.user_id == user.id
         ).all()
         
-        workout_dates = [w.date for w in workouts]
-        total_workouts = len(workout_dates)
+        # Get workouts for current month only
+        monthly_workouts = db.query(models.Workout).filter(
+            and_(
+                models.Workout.user_id == user.id,
+                models.Workout.date >= first_day_of_month,
+                models.Workout.date < first_day_of_next_month
+            )
+        ).all()
         
-        # Calculate streaks
-        current_streak, longest_streak = calculate_streaks(workout_dates, today)
+        all_workout_dates = [w.date for w in all_workouts]
+        monthly_workout_dates = [w.date for w in monthly_workouts]
+        
+        # Monthly total workouts
+        total_workouts = len(monthly_workout_dates)
+        
+        # Calculate streaks (using all workouts, not just monthly)
+        current_streak, longest_streak = calculate_streaks(all_workout_dates, today)
         
         leaderboard_data.append({
             "user_id": str(user.id),
@@ -782,7 +802,7 @@ def get_leaderboard(
             "longest_streak": longest_streak
         })
     
-    # Sort by: 1) total_workouts (desc), 2) current_streak (desc), 3) longest_streak (desc)
+    # Sort by: 1) total_workouts (monthly, desc), 2) current_streak (desc), 3) longest_streak (desc)
     leaderboard_data.sort(
         key=lambda x: (x["total_workouts"], x["current_streak"], x["longest_streak"]),
         reverse=True

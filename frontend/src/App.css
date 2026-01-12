@@ -32,6 +32,7 @@
   font-size: 0.95rem;
 }
 
+.nav-button,
 .logout-button {
   background: #f0f0f0;
   color: #666;
@@ -43,8 +44,18 @@
   transition: background 0.2s;
 }
 
+.nav-button:hover,
 .logout-button:hover {
   background: #e0e0e0;
+}
+
+.nav-button {
+  background: #667eea;
+  color: white;
+}
+
+.nav-button:hover {
+  background: #5568d3;
 }
 
 /* Mobile styles for header */

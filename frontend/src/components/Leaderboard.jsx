@@ -29,7 +29,7 @@ function Leaderboard({ currentUserId }) {
     if (rank === 1) return '🥇'
     if (rank === 2) return '🥈'
     if (rank === 3) return '🥉'
-    return `#${rank}`
+    return rank
   }
 
   const getRankClass = (rank) => {
@@ -39,10 +39,17 @@ function Leaderboard({ currentUserId }) {
     return ''
   }
 
+  const getCurrentMonth = () => {
+    const now = new Date()
+    return now.toLocaleString('default', { month: 'long', year: 'numeric' })
+  }
+
   if (loading) {
     return (
       <div className="leaderboard-container">
-        <h2 className="leaderboard-title">🏆 Leaderboard</h2>
+        <div className="leaderboard-info">
+          <div className="month-indicator">📅 {getCurrentMonth()}</div>
+        </div>
         <div className="loading">Loading leaderboard...</div>
       </div>
     )
@@ -51,7 +58,9 @@ function Leaderboard({ currentUserId }) {
   if (error) {
     return (
       <div className="leaderboard-container">
-        <h2 className="leaderboard-title">🏆 Leaderboard</h2>
+        <div className="leaderboard-info">
+          <div className="month-indicator">📅 {getCurrentMonth()}</div>
+        </div>
         <div className="error">Error loading leaderboard: {error}</div>
       </div>
     )
@@ -59,42 +68,47 @@ function Leaderboard({ currentUserId }) {
 
   return (
     <div className="leaderboard-container">
-      <h2 className="leaderboard-title">🏆 Leaderboard</h2>
-      <p className="leaderboard-subtitle">Ranked by total workouts, current streak, and longest streak</p>
+      <div className="leaderboard-info">
+        <div className="month-indicator">📅 {getCurrentMonth()}</div>
+        <div className="leaderboard-note">Ranked by monthly workouts, current streak, and longest streak</div>
+      </div>
       
       {leaderboard.length === 0 ? (
         <div className="empty-leaderboard">No users yet. Be the first to log a workout!</div>
       ) : (
-        <div className="leaderboard-table">
-          <div className="leaderboard-header">
-            <div className="header-rank">Rank</div>
-            <div className="header-username">User</div>
-            <div className="header-stat">Total</div>
-            <div className="header-stat">Current</div>
-            <div className="header-stat">Longest</div>
-          </div>
-          
-          {leaderboard.map((entry) => {
-            const isCurrentUser = entry.user_id === currentUserId
-            return (
-              <div
-                key={entry.user_id}
-                className={`leaderboard-row ${getRankClass(entry.rank)} ${isCurrentUser ? 'current-user' : ''}`}
-              >
-                <div className="row-rank">
-                  <span className="rank-icon">{getRankIcon(entry.rank)}</span>
-                </div>
-                <div className="row-username">
-                  <span className="username-text">@{entry.username}</span>
-                  {isCurrentUser && <span className="you-badge">You</span>}
-                </div>
-                <div className="row-stat" data-label="Total Workouts">{entry.total_workouts}</div>
-                <div className="row-stat" data-label="Current Streak">{entry.current_streak}</div>
-                <div className="row-stat" data-label="Longest Streak">{entry.longest_streak}</div>
-              </div>
-            )
-          })}
-        </div>
+        <table className="leaderboard-table">
+          <thead>
+            <tr>
+              <th className="col-rank">Rank</th>
+              <th className="col-username">User</th>
+              <th className="col-stat">Monthly Workouts</th>
+              <th className="col-stat">Current Streak</th>
+              <th className="col-stat">Longest Streak</th>
+            </tr>
+          </thead>
+          <tbody>
+            {leaderboard.map((entry) => {
+              const isCurrentUser = entry.user_id === currentUserId
+              return (
+                <tr
+                  key={entry.user_id}
+                  className={`leaderboard-row ${getRankClass(entry.rank)} ${isCurrentUser ? 'current-user' : ''}`}
+                >
+                  <td className="row-rank">
+                    <span className="rank-icon">{getRankIcon(entry.rank)}</span>
+                  </td>
+                  <td className="row-username">
+                    <span className="username-text">@{entry.username}</span>
+                    {isCurrentUser && <span className="you-badge">You</span>}
+                  </td>
+                  <td className="row-stat">{entry.total_workouts}</td>
+                  <td className="row-stat">{entry.current_streak}</td>
+                  <td className="row-stat">{entry.longest_streak}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       )}
     </div>
   )
