@@ -42,6 +42,11 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: background 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .nav-button:hover,
@@ -138,6 +143,17 @@
     padding: 30px 20px;
     font-size: 1rem;
   }
+
+  .nav-button,
+  .logout-button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .user-info {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
 }
 
 /* Small phones */
@@ -152,6 +168,16 @@
   }
 
   .subtitle {
+    font-size: 0.85rem;
+  }
+
+  .nav-button,
+  .logout-button {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  .username {
     font-size: 0.85rem;
   }
 }

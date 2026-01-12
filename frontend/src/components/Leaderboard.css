@@ -3,6 +3,8 @@
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .leaderboard-info {
@@ -31,6 +33,7 @@
 
 .leaderboard-table {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
   background: white;
 }
@@ -161,29 +164,50 @@
 @media (max-width: 480px) {
   .leaderboard-container {
     padding: 16px;
+    border-radius: 12px;
   }
 
   .leaderboard-table {
     font-size: 0.85rem;
+    min-width: 500px;
   }
 
   .leaderboard-table th,
   .leaderboard-table td {
-    padding: 10px 6px;
+    padding: 10px 8px;
   }
 
-  .leaderboard-table th.col-stat,
+  .leaderboard-table th.col-rank {
+    width: 60px;
+    padding: 10px 4px;
+  }
+
+  .leaderboard-table th.col-username {
+    min-width: 120px;
+  }
+
+  .leaderboard-table th.col-stat {
+    width: 100px;
+    font-size: 0.75rem;
+    padding: 10px 4px;
+  }
+
   .leaderboard-table td.row-stat {
-    display: none;
+    font-size: 0.9rem;
+    padding: 10px 4px;
   }
 
-  .leaderboard-table th.col-stat:nth-child(3),
-  .leaderboard-table td.row-stat:nth-child(3),
-  .leaderboard-table th.col-stat:nth-child(4),
-  .leaderboard-table td.row-stat:nth-child(4),
-  .leaderboard-table th.col-stat:nth-child(5),
-  .leaderboard-table td.row-stat:nth-child(5) {
-    display: table-cell;
+  .row-username {
+    gap: 6px;
+  }
+
+  .username-text {
+    font-size: 0.85rem;
+  }
+
+  .you-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
   }
 
   .month-indicator {
@@ -203,10 +227,31 @@
 
   .leaderboard-table {
     font-size: 0.8rem;
+    min-width: 450px;
   }
 
   .leaderboard-table th,
   .leaderboard-table td {
-    padding: 8px 4px;
+    padding: 8px 6px;
+  }
+
+  .leaderboard-table th.col-rank {
+    width: 50px;
+    padding: 8px 2px;
+  }
+
+  .leaderboard-table th.col-stat {
+    width: 80px;
+    font-size: 0.7rem;
+    padding: 8px 2px;
+  }
+
+  .leaderboard-table td.row-stat {
+    font-size: 0.85rem;
+    padding: 8px 2px;
+  }
+
+  .rank-icon {
+    font-size: 1.2rem;
   }
 }
