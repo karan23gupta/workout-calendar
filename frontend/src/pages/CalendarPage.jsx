@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import Calendar from '../components/Calendar'
 import StreakDisplay from '../components/StreakDisplay'
 import WorkoutModal from '../components/WorkoutModal'
-import { fetchWorkouts, fetchStreaks, isAuthenticated, getCurrentUser, logout } from '../api'
+import Navigation from '../components/Navigation'
+import { fetchWorkouts, fetchStreaks, isAuthenticated, getCurrentUser } from '../api'
 import '../App.css'
 
 function CalendarPage() {
@@ -11,7 +12,6 @@ function CalendarPage() {
   const [streaks, setStreaks] = useState({ current_streak: 0, longest_streak: 0 })
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [user, setUser] = useState(getCurrentUser())
   const [selectedDate, setSelectedDate] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const navigate = useNavigate()
@@ -42,7 +42,7 @@ function CalendarPage() {
     } catch (error) {
       console.error('Error loading data:', error)
       if (error.message.includes('Unauthorized')) {
-        handleLogout()
+        navigate('/')
       }
     } finally {
       setLoading(false)
@@ -62,18 +62,6 @@ function CalendarPage() {
     setCurrentDate(newDate)
   }
 
-  const handleLogout = () => {
-    logout()
-    setUser(null)
-    setWorkouts(new Map())
-    setStreaks({ current_streak: 0, longest_streak: 0 })
-    navigate('/')
-  }
-
-  const handleLeaderboardClick = () => {
-    navigate('/leaderboard')
-  }
-
   if (loading) {
     return (
       <div className="app">
@@ -84,20 +72,12 @@ function CalendarPage() {
 
   return (
     <div className="app">
+      <Navigation />
       <header className="app-header">
         <div className="header-content">
           <div>
             <h1>Workout Calendar</h1>
             <p className="subtitle">Track your fitness journey</p>
-          </div>
-          <div className="user-info">
-            <span className="username">@{user?.username}</span>
-            <button className="nav-button" onClick={handleLeaderboardClick}>
-              🏆 Leaderboard
-            </button>
-            <button className="logout-button" onClick={handleLogout}>
-              Logout
-            </button>
           </div>
         </div>
       </header>

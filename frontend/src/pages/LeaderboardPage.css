@@ -15,10 +15,11 @@
 
 .header-content {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+  text-align: center;
 }
 
 .leaderboard-page-header h1 {
@@ -121,13 +122,6 @@
   .header-content {
     flex-direction: column;
     text-align: center;
-  }
-
-  .user-info {
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
   }
 
   .leaderboard-page-header h1 {
